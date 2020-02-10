@@ -1,4 +1,4 @@
-# Introductory Statistics with R
+## Introductory Statistics with R
 
 Wed 2/12  
 10:00-12:00     
