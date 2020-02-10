@@ -1,0 +1,120 @@
+# YOUR TURN #1 ------------------------------------------------------------
+
+# What proportion of ACS respondents are married? As a population estimate, how
+# certain is it? Calculate a confidence interval
+
+prop.table(table(acs12$married))
+mosaic::prop.test(acs12$married == "yes")
+pout <- prop.test(acs12$married == "yes")
+pout$conf.int
+
+
+# YOUR TURN #2 ------------------------------------------------------------
+
+# (1) What is the mean income of ACS respondents? As a population estimate, how
+# certain is it? Calculate a confidence interval.
+
+summary(acs12$income)
+hist(acs12$income)
+mean(acs12$income, na.rm = TRUE)
+median(acs12$income, na.rm = TRUE)
+t.test(acs12$income)
+smean.cl.normal(acs12$income)
+smean.cl.boot(acs12$income, B = 1500)
+
+# (2) How many respondents reported an income of 0?
+sum(acs12$income == 0, na.rm = TRUE)
+
+# (3) What proportion of people reported earning more than $100,000? As a
+# population estimate, how certain is it? Calculate a confidence interval.
+mean(acs12$income > 100000, na.rm = TRUE)
+mosaic::prop.test(acs12$income > 100000)
+
+
+
+
+# YOUR TURN #3 ------------------------------------------------------------
+
+# Compare the proportion of people with disabilities between male and female
+# (gender). What is the confidence interval of the difference of proportions?
+
+xtabs(~ gender + disability, data = acs12)
+addmargins(xtabs(~ gender + disability, data = acs12), 2)
+prop.table(xtabs(~ gender + disability, data = acs12), margin = 1)
+
+prop.test(x = c(152, 172), n = c(969, 1031))
+
+
+
+# YOUR TURN #4 ------------------------------------------------------------
+
+# How does mean hrs_work differ between gender? What is the confidence interval
+# of the difference?
+summary(acs12$hrs_work)
+hist(acs12$hrs_work)
+aggregate(hrs_work ~ gender, data = acs12, mean)
+t.test(hrs_work ~ gender, data = acs12)
+
+
+
+
+# YOUR TURN #5 ------------------------------------------------------------
+
+# Run an ANOVA of log(income) on edu. Is there a difference in mean log(income)
+# values between different levels of education? Go ahead subset acs12 to use
+# income greater than 0.
+
+aggregate(log(income) ~ edu, data = subset(acs12, income > 0), mean)
+boxplot(log(income) ~ edu, data = subset(acs12, income > 0))
+aov1 <- aov(log(income) ~ edu, data = subset(acs12, income > 0))
+summary(aov1)
+tuk1 <- TukeyHSD(aov1)
+tuk1
+plot(tuk1)
+exp(tuk1$edu[,"diff"])
+
+
+
+
+# YOUR TURN #6 ------------------------------------------------------------
+
+# (1) Create a cross tabulation of employment and education
+xtabs(~ employment + edu, data = acs12)
+
+# (2) Run a chi-square test on the cross tabulation. Is there evidence of
+# association?
+chisq.test(xtabs(~ employment + edu, data = acs12))
+
+# (3) Create a mosaic plot of the cross tabulation with residual shading
+mosaicplot(xtabs(~ employment + edu, data = acs12), shade = TRUE)
+
+
+
+
+
+# YOUR TURN #7 ------------------------------------------------------------
+
+# Calculate the correlation, and associated 95% confidence interval, between age
+# and hrs_work. Make a scatterplot as well.
+plot(acs12$age, acs12$hrs_work)
+cor(acs12$age, acs12$hrs_work, use = "pairwise")
+cor.test(acs12$age, acs12$hrs_work, use = "pairwise")
+
+
+
+
+# YOUR TURN #8 ------------------------------------------------------------
+
+# Regress log(income) on age. That is, fit lm(log(income) ~ age, data = acs12).
+# Maybe subset the data: subset = income > 0 & age > 17
+# Plot the data and fitted line.
+# Maybe try using a natural spline with 2 changes of direction?
+mod_age <- lm(log(income) ~ age, data = acs12, income > 0 & age > 17)
+plot(acs12$age, log(acs12$income))
+abline(mod_age)
+
+mod_age2 <- lm(log(income) ~ ns(age, 2), data = acs12, subset = income > 0 & age > 17)
+plot(acs12$age, log(acs12$income))
+y <- predict(mod_age2, newdata = data.frame(age = 17:90))
+lines(17:90, y)
+
