@@ -26,7 +26,7 @@ suppressPackageStartupMessages(library(mosaic))
 # From the openintro package
 
 # Import the acs12.csv file; the result is a data frame
-acs12 <- read.csv("data/acs12.csv")
+acs12 <- read.csv("https://github.com/clayford/IntroStatsR/raw/master/data/acs12.csv")
 
 # str() shows us the structure of the data frame
 str(acs12)
@@ -47,7 +47,9 @@ summary(acs12)
 # - missing data (NA's)
 # - big differences between mean and median (skewed data?)
 # - consistent Factor level names ("male" vs "Male")
+# - order of Factor levels
 # - excess zeroes, or some other value
+# - wrong data types (numbers stored as Factors, etc)
 #
 # Another option to get all summaries is the describe function from the Hmisc
 # package
@@ -102,12 +104,12 @@ barplot(table(acs12$hrs_work))
 
 # We can also count things satisfying a condition. 
 #
-# ==  EQUAL
-# !=  NOT EQUALS
-# >   GREATER THAN
-# <   LESS THAN
-# >=  GREATER THAN OR EQUAL
-# <=  LESS THAN OR EQUAL
+#  ==  EQUAL
+#  !=  NOT EQUALS
+#  >   GREATER THAN
+#  <   LESS THAN
+#  >=  GREATER THAN OR EQUAL
+#  <=  LESS THAN OR EQUAL
 
 # How many people are age 60?
 sum(acs12$age == 60)
@@ -125,6 +127,16 @@ sum(acs12$time_to_work > 60, na.rm = TRUE)
 # How many people do NOT have employment = "employed"
 sum(acs12$employment != "employed", na.rm=TRUE)
 
+# Combine conditions
+#    & (AND) 
+#    | (OR)
+#
+# How many married AND work more than 50 hours
+sum(acs12$married == "yes" & acs12$hrs_work > 50, na.rm = TRUE)
+
+# How many under age 18 OR over age 65
+sum(acs12$age < 18 | acs12$age > 65)
+
 
 # Proportions
 #
@@ -136,7 +148,7 @@ mean(acs12$age > 60)
 mean(acs12$time_to_work > 60, na.rm = TRUE)
 
 # Use prop.table to get proportions from tables
-
+#
 # NOTE: these are proportions of non-missing!
 prop.table(table(acs12$employment))
 
@@ -169,11 +181,11 @@ table(acs12$employment) %>% prop.table() %>% round(2)
 # Example: how certain are we about 0.53 employed?
 #
 # The prop.test() function returns a 95% confidence interval for an estimated
-# proportion. 
+# proportion.
 #
-# 95% Confidence Interval theory: sample the data, calculate a confidence
+# 95% Confidence Interval theory: sample the data, calculate a 95% confidence
 # interval, repeat many times. About 95% of confidence intervals will contain
-# the "true" value you're trying to estimate. See Appendix for a demo.
+# the "true" value you're estimating. See Appendix for a demo.
 #
 # The prop.test() function requires number of "successes" (ie, number employed)
 # and total number of "trials" (ie, number of respondents).
@@ -212,7 +224,7 @@ binom.confint(x = table(acs12$employment),
               method = "prop.test")
 
 # The binom.confint() function provides a 11 different methods for calculating
-# CIs. # Why use other methods? When proportion estimate is near boundary (ie, 0
+# CIs. Why use other methods? When proportion estimate is near boundary (ie, 0
 # or 1). Notice these are equal out to 3 decimal places.
 binom.confint(x = 843,n = 1605)
 
@@ -232,8 +244,10 @@ mosaic::prop.test(acs12$hrs_work > 40)
 
 # YOUR TURN #1 ------------------------------------------------------------
 
-# What proportion of ACS respondents are married? As a population estimate, how
-# certain is it? Calculate a confidence interval
+# (1) What proportion of ACS respondents are married? 
+
+# (2) As a population estimate, how certain is it? Calculate a confidence
+# interval
 
 
 
@@ -282,8 +296,9 @@ IQR(acs12$hrs_work, na.rm = TRUE)
 mean(acs12$hrs_work, na.rm = TRUE)
 
 # The mean of 37.977 is just an estimate. How certain are we about the mean?
-# Another sample would yield slightly different results. The t.test function
-# returns a 95% confidence interval for a mean
+# Another sample would yield slightly different results. The t.test() function
+# returns a 95% confidence interval for a mean. 
+# Notice we do not need na.rm = TRUE.
 t.test(acs12$hrs_work)
 
 # CI: (37.1, 38.8)
@@ -336,8 +351,8 @@ Hmisc::smean.cl.boot(acs12$hrs_work, B = 1500)
 
 # We often want to compare two proportions.
 
-# Example: Is there a difference between the percent of people with disabilities
-# between citizens and non-citizens?
+# Example: Is there a difference between the proportion of people with
+# disabilities between citizens and non-citizens?
 
 # cross tabulation of citizenship and disability using table()
 table(acs12$citizen, acs12$disability)
@@ -406,7 +421,8 @@ xtabs(~ citizen + edu, data = acs12) %>%
 # Number of success: 15, 344
 xtabs(~ citizen + edu, data = acs12)
 
-# Number of trials: 117, 1825
+# Number of trials: 117, 1825. The addmargins() function adds margin totals to a
+# table in the specified dimension.
 xtabs(~ citizen + edu, data = acs12) %>% 
   addmargins(margin = 2)
 
@@ -434,7 +450,7 @@ prop.test(x = tab[,"college"], n = tab[,"Sum"])
 # Compare the proportion of people with disabilities between male and female
 # (gender). What is the confidence interval of the difference of proportions?
 
-
+xtabs(~ gender + disability, data = acs12)
 
 
 # Comparing two means -----------------------------------------------------
@@ -845,18 +861,12 @@ predict(mod3, newdata = data.frame(hrs_work = c(20,30,40,50)),
 # (1) Regress log(income) on age. That is, fit lm(log(income) ~ age, data =
 #     acs12). Be sure to subset the data: subset = income > 0 & age > 17
 #     Plot the data and fitted line.
-mod_age <- lm(log(income) ~ age, data = acs12, income > 0 & age > 17)
-plot(acs12$age, log(acs12$income))
-abline(mod_age)
+
 
 
 # (2) Regress log(income) on ns(age, 3). Again, Be sure to subset the data:
 #     subset = income > 0 & age > 17. Plot the data and fitted line.
-mod_age2 <- lm(log(income) ~ ns(age, 3), data = acs12, 
-               subset = income > 0 & age > 17)
-plot(acs12$age, log(acs12$income))
-y <- predict(mod_age2, newdata = data.frame(age = 17:90))
-lines(17:90, y, col = "red")
+
 
 
 # Appendix: Plotting means and confidence intervals -----------------------

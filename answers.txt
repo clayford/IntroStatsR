@@ -105,16 +105,20 @@ cor.test(acs12$age, acs12$hrs_work, use = "pairwise")
 
 # YOUR TURN #8 ------------------------------------------------------------
 
-# Regress log(income) on age. That is, fit lm(log(income) ~ age, data = acs12).
-# Maybe subset the data: subset = income > 0 & age > 17
-# Plot the data and fitted line.
-# Maybe try using a natural spline with 2 changes of direction?
+# (1) Regress log(income) on age. That is, fit lm(log(income) ~ age, data =
+#     acs12). Be sure to subset the data: subset = income > 0 & age > 17
+#     Plot the data and fitted line.
 mod_age <- lm(log(income) ~ age, data = acs12, income > 0 & age > 17)
 plot(acs12$age, log(acs12$income))
 abline(mod_age)
 
-mod_age2 <- lm(log(income) ~ ns(age, 2), data = acs12, subset = income > 0 & age > 17)
+
+# (2) Regress log(income) on na(age, 3). Again, Be sure to subset the data:
+#     subset = income > 0 & age > 17. Plot the data and fitted line.
+mod_age2 <- lm(log(income) ~ ns(age, 3), data = acs12, 
+               subset = income > 0 & age > 17)
 plot(acs12$age, log(acs12$income))
 y <- predict(mod_age2, newdata = data.frame(age = 17:90))
-lines(17:90, y)
+lines(17:90, y, col = "red")
+
 
