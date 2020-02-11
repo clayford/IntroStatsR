@@ -23,6 +23,7 @@ suppressPackageStartupMessages(library(mosaic))
 # Getting data into R -----------------------------------------------------
 
 # Results from the US Census American Community Survey, 2012.
+# https://www.census.gov/programs-surveys/acs
 # From the openintro package
 
 # Import the acs12.csv file; the result is a data frame
@@ -253,7 +254,7 @@ mosaic::prop.test(acs12$hrs_work > 40)
 
 
 
-# means and medians -------------------------------------------------------
+# Means and Medians -------------------------------------------------------
 
 # The mean and median are two measures of center.
 
@@ -311,25 +312,21 @@ t.out$conf.int
 # confidence interval:
 Hmisc::smean.cl.normal(acs12$hrs_work)
 
+# Confidence intervals for medians are a little tricker.
+
 # The smedian.hilow() function from the Hmisc package returns a confidence
-# interval for the median:
+# interval for the median. "computes the sample median and a selected pair of
+# outer quantiles having equal tail areas."
 Hmisc::smedian.hilow(acs12$hrs_work)
 
-# The smean.cl.boot() function the the Hmisc package returns a bootstrapped
-# confidence interval of the mean. This may be useful for small samples.
-Hmisc::smean.cl.boot(acs12$hrs_work, B = 1500)
+# The wilcox.test() function returns a CI for medians, with conf.int = TRUE.
+# Note the estimate is a "pseudomedian".
+wilcox.test(acs12$hrs_work, conf.int = TRUE)
 
-# Bootstrapping means resampling your data with replacement, calculating a
-# statistic of choice (such as a mean) and then repeating many times. The result
-# is many means which we then can use to get an estimate of uncertainty of our
-# original estimated mean. Because it's based on a resampling, your bootstrapped
-# CI will probably be different from mine, but only slightly.
-#
-# Bootstrapping is effective for estimating uncertainty when the usual
-# assumptions for calculating standard errors are suspect, or when a standard
-# error formula is complex or not available.
-#
-# See Appendix below for more information on basic bootstrapping.
+# Bootstrapping is another approach for estimating uncertainty and calculating
+# confidence intervals. See Appendix below for more information on basic
+# bootstrapping.
+
 
 
 # YOUR TURN #2 ------------------------------------------------------------
@@ -499,6 +496,9 @@ mean(acs12$income == 0, na.rm=TRUE)
 table(acs12$gender, acs12$income == 0) %>% 
   prop.table(margin = 1) %>% 
   round(2)
+
+# number of income == by employment, by gender
+table(acs12$income == 0, acs12$employment, acs12$gender)
 
 # Maybe we should drop the zeroes? We can use the subset() function to only use
 # rows for which income is greater than 0.
@@ -700,7 +700,7 @@ xtabs(~ employment + race, data = acs12) %>%
 
 
 
-# Association between numeric variables -----------------------------------
+# Linear association between numeric variables ----------------------------
 
 # Correlation summarizes linear association between two numeric variables.
 # Ranges from -1 to 1. No correlation is 0.
@@ -713,7 +713,7 @@ xtabs(~ employment + race, data = acs12) %>%
 # Let's first plot age versus income
 plot(acs12$age, acs12$income)
 
-# Plot age versus income for income > 0
+# Plot income versus age for income > 0
 plot(income ~ age, data = subset(acs12, income > 0))
 
 # Correlation between age and income; returns NA because we have missing data.
@@ -733,6 +733,12 @@ mosaic::cor(age ~ income, use = "pairwise.complete.obs",
 mosaic::cor.test(age ~ income, use = "pairwise.complete.obs", 
                  data = subset(acs12, income > 0))
 
+# Plot log(income) versus age for income > 0
+plot(log(income) ~ age, data = subset(acs12, income > 0))
+
+# correlation between age and log(income)
+mosaic::cor.test(age ~ log(income), use = "pairwise.complete.obs", 
+                 data = subset(acs12, income > 0))
 
 
 # YOUR TURN #7 ------------------------------------------------------------
@@ -747,9 +753,9 @@ mosaic::cor.test(age ~ income, use = "pairwise.complete.obs",
 
 # Simple linear regression is basically summarizing the relationship between two
 # variables as a straight line, using the familiar slope-intercept formula:
-#
-# y = a + bx 
-#
+# 
+# y = a + bx
+# 
 # This implies we can approximate the mean of y for a given value of x by
 # multiplying x by some number and adding a constant value.
 #
@@ -988,6 +994,38 @@ ggplot(dat) +
 
 # Appendix: Basic bootstrapping -------------------------------------------
 
+# Bootstrapping means resampling your data with replacement, calculating a
+# statistic of choice (such as a mean) and then repeating many times. The result
+# is many means which we then can use to get an estimate of uncertainty of our
+# original estimated mean. Because it's based on a resampling, your bootstrapped
+# CI will be different from mine, but only slightly.
+
+# Bootstrapping is effective for estimating uncertainty when the usual
+# assumptions for calculating standard errors are suspect, or when a standard
+# error formula is complex or not available.
+
+# Example data:
+x <- c(12, 22, 21, 18, 19, 23, 7)
+mean(x)
+
+# Bootstrap "by hand":
+# Resample with replacement (ie allow a value to be sampled more than once) and
+# estimate mean
+mean(sample(x, replace = TRUE))
+
+# repeat 1000 times and store
+b <- replicate(n = 1000, mean(sample(x, replace = TRUE)))
+
+# b contains 1000 bootstrapped means
+head(b)
+
+# We can take the 0.025 and 0.975 percentiles to get an approximate Confidence
+# Interval:
+quantile(b, probs = c(0.025, 0.975))
+
+# The Hmisc function smean.cl.boot calculates bootstrapped confidence intervals:
+Hmisc::smean.cl.boot(x)
+
 # Calculate a bootstrap CI of hrs_work using the Hmisc function smean.cl.boot.
 # If you run it multiple times you will get slightly difference intervals.
 smean.cl.boot(acs12$hrs_work, B = 1500)
@@ -1023,15 +1061,15 @@ boot.out <- boot(data = acs12$income,
 boot.ci(boot.out, type = "perc")
 
 # Another example: 
-# standard deviation. How to get a confidence interval for SD of income?
-sd(acs12$income, na.rm = TRUE)
+# IQR. How to get a confidence interval for the IQR of income?
+IQR(acs12$income, na.rm = TRUE)
 
 # Use the bootstrap. First write a function:
-bootSD <- function(x, i)sd(x[i], na.rm = TRUE)
+bootIQR <- function(x, i)IQR(x[i], na.rm = TRUE)
 
 # Run the bootstrap.
 boot.out <- boot(data = acs12$income, 
-                 statistic = bootSD, 
+                 statistic = bootIQR, 
                  R = 999)
 
 # Calculate the percentile confidence interval
