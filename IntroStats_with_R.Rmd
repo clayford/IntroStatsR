@@ -1,0 +1,601 @@
+---
+title: "Introductory Statistics with R"
+author: "Clay Ford, Statistical Research Consultant, UVA Library"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Quick Intro to R Notebooks and R Markdown
+
+This is an R Markdown Notebook. When you execute code within the notebook, the results appear beneath the code. This file was created in RStudio by going to File...New File...R Notebook.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing  *Ctrl+Shift+Enter* (Win/Linux) or *Cmd+Shift+Return* (Mac).  
+
+```{r}
+plot(cars)
+```
+
+To hide the output, click the Expand/Collapse output button. To clear results (or an error), click the "x". 
+
+You can also press *Ctrl+Enter* (Win/Linux) or *Cmd+Return* (Mac) to run one line of code at a time (instead of the entire chunk).
+
+Add a new R code chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac).  
+
+## Exercise 0 (code along)
+
+Insert a new R code chunk below and type/run the code: 22/7
+
+## Load packages
+
+```{r}
+library(magrittr)
+```
+
+
+## Load data 
+
+Today we'll work with a sample of the 2012 US Census American Community Survey. (https://www.census.gov/programs-surveys/acs). I obtained this data from the openintro package, which accompanies the OpenIntro Statistics textbook: https://www.openintro.org/book/os/
+
+Strictly speaking, this is _not_ a simple random sample, which is assumed when performing inferential statistics at the introductory level. However we will treat it as such for the purposes of today's class since it provides us one versatile, easy-to-understand data set to demonstrate multiple statistical methods. 
+
+The following code imports the acs12.csv file; the result is a data frame.
+
+```{r}
+acs12 <- read.csv("https://github.com/clayford/IntroStatsR/raw/master/data/acs12.csv")
+
+```
+
+The `str()` function shows us the structure of the data frame. The names following the `$` are the column or variable names. "int" means integer. "chr" means character. Our data has 2000 observations and 13 variables. "NA" means "Not Available" (ie, missing).
+
+```{r}
+str(acs12)
+```
+
+You can also click on the name in the Environment window to view the data.
+
+To get a quick summary of one of the numeric columns, use `summary`:
+
+```{r}
+summary(acs12$income)
+```
+
+To get a quick summary of one of the character columns, use `table`:
+
+```{r}
+table(acs12$employment)
+```
+
+### Exercise 1 (code along)
+
+Summarize the "edu" and "time_to_work" columns.
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+
+## Estimating proportions with confidence intervals
+
+It is commonly of interest to know what portion of the whole some count represents. For example: 
+
+- what proportion of the population works more than 40 hours a week? 
+- What proportion earns more than $100,000/year? 
+- What proportion reports being "unemployed"?
+
+One easy way to find a specific proportion is to take the `mean` of a TRUE/FALSE result. In R, TRUE = 1, FALSE = 0. The mean of zeroes and ones is the proportion of ones, and hence the proportion of TRUEs.
+
+R's comparison operators:
+
+-  ==  EQUAL
+-  !=  NOT EQUALS
+-  >   GREATER THAN
+-  <   LESS THAN
+-  >=  GREATER THAN OR EQUAL
+-  <=  LESS THAN OR EQUAL
+
+For example, what proportion of the population reports speaking a language besides English at home?
+
+What are the options?
+
+```{r}
+unique(acs12$lang)
+```
+
+To get the proportion who speak "other", use the `mean` function.
+
+```{r}
+mean(acs12$lang == "other")
+```
+
+We get NA because we have missing values in the "lang" column. That's a feature, not a bug. It alerts us that we have missing data. To override, set `na.rm = TRUE` to remove the NA values.
+
+```{r}
+mean(acs12$lang == "other", na.rm = TRUE)
+```
+
+
+So about 19%.
+
+How certain is that estimate? Another sample would yield slightly different results. _Confidence intervals help us quantify the uncertainty._ They provide an estimated lower and upper bound of our estimate.
+
+The `prop.test()` function returns a 95% confidence interval for an estimated proportion. It requires number of "successes" (ie, number who reported "other") and total number of "trials" (ie, number of respondents who answered the question).
+
+Here's one way to use `prop.test`. Calculate the number who answered "other" and the number of non-missing responses to the "lang" question.
+
+```{r}
+other <- sum(acs12$lang == "other", na.rm = TRUE)
+N <- sum(!is.na(acs12$lang))
+prop.test(x = other, n = N)
+```
+
+The reported 95% confidence interval is about (0.18, 0.21). We'll talk about the p-value and alternative hypothesis later in the workshop. For this question it's not relevant. 
+
+The mosaic version of `prop.test` allows us to simply use a conditional expression. (Note: placing the package name and two colons before a function tells R to use the function in that package.)
+
+```{r}
+mosaic::prop.test(acs12$lang == "other")
+```
+
+Another example: what proportion of people work more than 50 hours/week?
+
+```{r}
+mosaic::prop.test(acs12$hrs_work > 50)
+
+```
+
+About 0.9, with 95% CI of (0.07, 0.11).
+
+### Exercise 2
+
+Estimate the proportion of the population that earns more than $100,000/year.
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+## Estimating means with confidence intervals
+
+Means are one measure of the "center" of data. It is often interpreted as "expected value". For example, if we took the mean of the income column of our data, we might interpret it as the expected value of someone's income if we randomly sampled them from the population. This interpretation can be flawed, however, particularly if our data is skewed. Nevertheless, the mean is the mean. Just because it's not a good measure of expected value doesn't mean it's wrong. It just may not tell the whole story.
+
+Another measure of center is the median. That's the literal middle of the data: 50% on one side, 50% on the other. It's called an "order statistic". Sometimes it's a better representation of "expected value", especially when it comes to quantities like income where the distribution can be quite skewed.
+
+One way to quickly visualize distributions of numeric data is to use the `hist` function.
+
+```{r}
+hist(acs12$income)
+```
+
+This is textbook skew!
+
+Again, the summary function is useful for investigating the distribution of a quantity:
+
+```{r}
+summary(acs12$income)
+```
+
+This tells us at least 25% of our data is 0. "1st Qu." is the first quartile, or the lower 25% of the data. There's also a huge difference between the Median and the Mean.
+
+Let's go ahead and calculate the confidence interval for mean income. We can do this pretty easily with the `t.test` function. Simply give it a column of numeric data from a data frame.
+
+```{r}
+t.test(acs12$income)
+```
+
+The 95% CI is about (21332, 25867). Again the hypothesis test results are irrelevant. 
+
+One way to get a 95% confidence interval for a median is to use the `wilcox.text` function with `conf.int = TRUE`. Notice the output calls the median the "(pseudo)median". There are some sophisticated mathematics going on here, but this is probably a good way to go if you need a CI for a median.
+
+```{r}
+wilcox.test(acs12$income, conf.int = TRUE)
+```
+
+The 95% CI for the median is (30850, 35000).
+
+### Exercise 3
+
+Estimate the mean time_to_work (ie, commute time) with a 95% confidence interval. Take a look at the distribution as well.
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+
+
+## Comparing two proportions
+
+The following code creates a two-way contingency table with gender in the rows and employment in the columns using `xtabs`. The table is then "piped" into the `proportions` function. The argument `margin=1` says to calculate proportions along the rows. The result says about 6% of females are unemployed and that about 7% of males are unemployed. That's a difference of 1%.
+
+```{r}
+xtabs(~ gender + employment, data = acs12) %>% 
+  proportions(margin = 1)
+```
+
+Is this difference real? If we took another sample, would we get a similar result? Or might it flip and show more females being unemployed?
+
+This is where hypothesis testing can be useful. Two competing hypotheses:
+
+- Null: no difference between proportions
+- Alternative: the proportions are different
+
+To execute a hypothesis test comparing two proportions we can use the `prop.test` function. The first argument is the number of "successes" or occurrences. The second argument is the number of "trials" or observed responses. 
+
+Number of females and males reporting unemployed are 47 and 59, respectively:
+
+```{r}
+xtabs(~ gender + employment, data = acs12)
+```
+
+The total number of _observed_ females and males who reported employment status is 793 and 812, respectively. Below we pipe the result of `xtabs` into the `margin.table` function and set `margin=1` to sum the margins along the rows.
+
+```{r}
+xtabs(~ gender + employment, data = acs12) %>% 
+  margin.table(margin = 1)
+
+```
+
+Another option is the `addmargins` function
+
+```{r}
+xtabs(~ gender + employment, data = acs12) %>% 
+  addmargins()
+
+```
+
+Now we have the values we need to perform the hypothesis test. Notice the values need to be entered as a _vector_, which we create with the `c()` function.
+
+```{r}
+prop.test(x = c(47, 59), n = c(793, 812))
+```
+
+The p-value says there's about a 33% chance of getting a difference bigger than than what we observed (about 0.01) if there really is no difference between the proportions.
+
+Traditionally we judge a difference "significant" if the p-value is small, say below 0.05.
+
+In this case, we might conclude: 
+
+- "with the current sample size the data were unable to overcome the
+  supposition of no difference in the proportions" 
+
+The 95 percent confidence interval is on the difference of proportions. Since it overlaps 0 we're uncertain about the direction of the difference.
+
+Notice we hard-coded the numbers into the function. There's nothing wrong with this but provides an opportunity for human error. Here's one way to avoid that.
+
+```{r}
+# save table
+tab <- xtabs(~ gender + employment, data = acs12)
+# extract and save the "unemployed" column
+X <- tab[,"unemployed"]
+# extract and save the marginal totals of gender
+N <- tab %>% margin.table(margin = 1)
+# run prop.test with X and N
+prop.test(x = X, n = N)
+```
+
+### Exercise 4
+
+About 20% of people with no disability report having a college degree. Likewise, About 12% of people with a disability report having a college degree. Perform a hypothesis test to compare the proportions.  
+
+
+```{r}
+xtabs(~ disability + edu, data = acs12) %>% 
+  proportions(margin = 1)
+```
+
+```{r}
+xtabs(~ disability + edu, data = acs12) %>% 
+  addmargins()
+```
+
+
+
+## Comparing two means
+
+The following code computes the mean hours worked per week for married and non-married people. The `aggregate` function uses the formula interface like `xtabs`. On the left of the `~` we enter the numeric variable. On the right we enter the grouping variable. The final argument is the function we wish to use with aggregate. In this case it's the mean. Married people appear to work longer hours, by about 5 hours. 
+
+```{r}
+aggregate(hrs_work ~ married, data = acs12, mean)
+```
+
+Is this difference real? If we took another sample, would we get a similar result? Or might it flip and show more single people working more hours?
+
+Again hypothesis testing can help us assess this difference. To execute a hypothesis test comparing two means we can use the `t.test` function. Like `aggregate` we can use the formula interface.
+
+```{r}
+t.test(hrs_work ~ married, data = acs12)
+```
+
+The p-value is virtually 0. There is almost no chance of seeing a difference in means bigger than what we observed if there truly was no difference in the population. 
+
+The 95% confidence interval is on the difference of the means. It is more informative than the p-value. It provides information on the direction and magnitude of the difference. The p-values does not provide this information. The 95% CI is (-7.1, -3.7). It appears that married people work at least 3.7 hours more per week than non-married people. 
+
+Note: Be cautious before concluding that being married _causes_ someone to work longer hours. This simply hypothesis test looked at everyone of all ages working full-time and part-time. Perhaps if we compared hours worked between married and non-married people _among full-time workers_ we would see a different result. 
+
+### Exercise 5
+
+Calculate mean hours worked per week for males and females (gender). Perform a hypothesis test to compare the means.
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+
+
+## Checking for association between categorical variables
+
+Was race associated with education in 2012? In other words, does knowing race provide some indication of level of education achievement? Let's look at the cross-tabulation with proportions along the rows (race):
+
+```{r}
+xtabs(~ race + edu, data = acs12) %>% 
+  proportions(margin = 1) %>% 
+  round(2)
+```
+
+A common test for association between categorical variables is the chi-square test. The null is no association. A small p-value provides evidence against the hypothesis of no association. Use the `chisq.test` function with a table to perform a chi-square test.
+
+```{r}
+tab <- xtabs(~ race + edu, data = acs12)
+chisq.test(tab)
+```
+
+The output is minimal. The small p-value appears to indicate that some association is present. But where is it? How strong is it? Which race has higher or lower levels of education than would be expected if there was no association?
+
+One way to check this is to look at the "residuals". Anything cell higher than 2 in absolute value is a place of "strain" or "interest"
+
+```{r}
+ct <- chisq.test(tab)
+ct$residuals
+```
+
+People who identified race as "other" seem to have a lower rate of "college" education than expected.
+
+A visual way to assess this is with a mosaic plot. Use the `mosaicplot` function on the table and set `shade = TRUE`. Red spots indicate cell counts that are lower than expected, blue spots indicate cell counts that higher than expected. 
+
+```{r}
+mosaicplot(tab, shade = TRUE)
+```
+
+Note: Small cell counts (less than 5) can lead to warnings that say "Chi-squared approximation may be incorrect". When that happens we're basically being told "beware, you have a small amount of data."
+
+### Exercise 6
+
+Is race associated with employment? If so, how so?
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+## Checking for association between numeric variables
+
+Is the hours worked per week associated with income? Association of two numeric variables is sometimes measured with correlation. Formally, correlation measures _linear_ association and ranges from -1 to 1.
+
+This illustration is useful:
+https://en.wikipedia.org/wiki/Correlation_and_dependence#/media/File:Correlation_examples2.svg
+
+The `cor.test` function calculates correlation and performs a hypothesis test to check if it's plausibly different from 0. More importantly it returns a 95% confident interval to help us gauge the uncertainty in our estimate. It allows the use of a formula interface similar to `xtabs`. Nothing goes to the left of the `~`
+
+```{r}
+cor.test(~ hrs_work + income, data = acs12)
+```
+
+Correlation is estimated to be about 0.34 with a 95% CI of (0.28, 0.40). It's positive so it appears working more hours is associated with higher yearly income. Perhaps that's not surprising.
+
+It's recommended to plot your data before inferring too much from correlation. Here's one way using the base R `plot` function. It, too, allows us to use the formula interface where the left side is the y-axis and the right side is the x-axis.
+
+```{r}
+plot(income ~ hrs_work, data = acs12)
+```
+
+Yes, working more hours usually leads to higher income, but it's not a certainty. 
+
+Correlation only informs us about linear association. It says nothing about the nature of the association other than "positive" or "negative". How much can income be expected to increase for each additional hour worked? That's a question answered by regression.
+
+### Exercise 7 
+
+Is age associated with income? Calculate the correlation and a 95% confidence interval. Also plot the data.
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+## Comparing more than two means
+
+Does mean income change according to education? Recall education has three levels.
+
+```{r}
+unique(acs12$edu)
+```
+
+The mean income for all three levels of education can be calculated using aggregate.
+
+```{r}
+aggregate(income ~ edu, data = acs12, mean)
+```
+
+They sure appear different. But these are just estimates. Maybe another sample would yield different results. A formal test for the equality of means is the One-Way Analysis of Variance, or one-way ANOVA. We can run a one-way ANOVA in R using the `aov` function. It helps to save the result and call the `summary` function on the saved object. 
+
+```{r}
+aov1 <- aov(income ~ edu, data = acs12)
+summary(aov1)
+```
+
+The output is the familiar ANOVA table. The small p-value tells us the probability of seeing means that differ more so than these 3 means, assuming they're really all equal in the population, is virtually 0. That's all it says. It doesn't tell us how the differ or in what direction. To investigate that we usually follow-up with what are usually called post-hoc tests.
+
+One built-in to R that works with `aov` objects is `TukeyHSD`. That stands for Tukey's Honestly Significant Differences. Just use it with the saved `aov` object. It calculates pairwise differences and tests if they're plausibly different from 0, using _adjusted p-values_, (ie, larger p-values due to performing more than one hypothesis test). All of these differences appear to be quite large and quiet real. 
+
+```{r}
+TukeyHSD(aov1)
+```
+
+An exploratory plot that often accompanies a one-way ANOVA is the boxplot.
+
+```{r}
+boxplot(income ~ edu, data = acs12)
+```
+
+
+- The width of the box (along the y axis) represents the middle 50% of the data. It is called the Interquartile Range (IQR).
+- The line in the box is the median. 
+- The top of the box is the 75th percentile. 
+- The bottom of the box is the 25th percentile. 
+- The "whiskers" extending out of the box are to the highest and lowest values not to exceed 1.5 * IQR
+- The dots are considered "outliers" relative to the rest of the data.
+
+We no doubt have some very large income values driving those means!
+
+### Exercise 8
+
+How does mean income differ between race? Do the following:
+
+- calculate mean income by race using `aggregate`
+- create a boxplot of income by race using `boxplot`
+- Run a one-way anova using `aov`
+- Compare means using `TukeyHSD`
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+
+
+## Checking ANOVA assumptions and performing transformations
+
+When we run a one-way ANOVA we make some important assumptions, two of which are:
+
+- the variance of the numeric variable is about the same between the groups
+- the residuals are normally distributed. The residual is the difference between the group mean and the observed value in that group. 
+
+A quick way to visually assess these assumptions is to call `plot` on your `aov` object. This produces 4 plots. The 1st and 3rd assess the constant variance assumption. The 2nd assesses the normality assumption. The 4th assesses influential data (data that by itself is influencing the results.)
+
+The two plots of interest to us are the 2nd and 3rd plots. They reveal pretty severe violations of the constant variance and normality assumptions. In the 2nd plot we'd like the points to lie close to the diagonal line. In the 3rd plot, we'd like the smooth red line to be close to horizontal.
+
+```{r}
+plot(aov1)
+```
+
+What does this mean? _It usually means our "model" is deficient in some way_. A one-way ANOVA is basically a model that says (in our case) mean income can be explained by education. If we know someone's education level we can make a good estimate of their expected income. The violation of the assumptions tells us there are probably other factors that affect income and that our model is too simple.  
+
+What can we do if we want to still use the one-way ANOVA? A common approach is to log transform the numeric data and see if that helps. A log transformation is a non-linear transformation the sometimes makes data a little more symmetric. It only works on positive numbers, so we'll need to subset our data to only use income greater than 0. Fortunately we can do all this on-the-fly in R using the `log` and `subset` functions. So now our analysis is slightly different. We're only comparing mean incomes for people who earn more than 0. And as we'll see, the interpretation is more complicated.
+
+```{r}
+aov2 <- aov(log(income) ~ edu, data = subset(acs12, income > 0))
+summary(aov2)
+```
+
+The p-value is quite small, which provides evidence the means really are different in some way. Let's re-check our assumptions. They are vastly improved.
+
+```{r}
+plot(aov2)
+```
+
+How about the post-ANOVA pairwise differences?
+
+```{r}
+TukeyHSD(aov2)
+```
+
+They appear to be significantly different, but they're on the log scale and impossible to interpret. Log transforming a numeric variable when doing ANOVA implies the effect of group is multiplicative instead of additive. To see that multiplicative effect we need to exponentiate the results. We can do this by saving the `TukeyHSD` result and transforming the log values using the `exp` function.
+
+```{r}
+t.out <- TukeyHSD(aov2)
+exp(t.out$edu[,1:3])
+```
+
+"grad - college" equals about 1.83. This says we can expect someone with a graduate degree to make about 83% more than a person with a bachelor's (college) degree. Likewise, "hs or lower - grad" equals about 0.28 says we can expect someone with a HS or lower education to make about 72% less than someone with a graduate degree. Or we might say someone with a HS or lower education earns about 28 cents for every dollar someone with a graduate degree earns.
+
+## Simple linear regression
+
+Income has a lot of variability. Why is that? Could some of the variability be due to age of the person? Simple linear regression attempts to answer this question. It allows us to estimate a mean conditional on some other numeric variable. We call it "simple" because we just use one variable. Using more than one variable is often called "Multiple Regression". In statistics this is more commonly referred to as "Linear Modeling".
+
+Whole courses are taught on this topic. Entire books are devoted to it. We can't possibly do it justice, but we can get you started with some basics. 
+
+Linear regression is performed in R with the `lm` function. Like the `t.test` function it uses the formula interface. (In fact a t-test is simply a special case of regression.) Like `aov`, it's common practice to save the result of `lm` and use `summary` to view the results.
+
+Below we might read the formula as "regress income on age". 
+
+```{r}
+m1 <- lm(income ~ age, data = acs12)
+summary(m1)
+```
+
+According to the output (if we believe it), each additional year of age results in earning about 82 fewer dollars per year. The intercept makes no sense. It is the expected mean income of someone who is age 0. 
+
+The output includes a hypothesis test for age. The null is that the _coefficient_ for age is 0. In other words, age tells us nothing about income. The p-value says we have a probability of getting a coefficient less than -82 (or greater than 82) of 0.163 if in fact the coefficient really is 0. In this case we can't tell if the _effect_ of age is positive or negative. It is certainly not exactly 0!
+
+But linear regression has the same assumptions as a one-way ANOVA. (And like the t-test, ANOVA is a special case of linear regression.) We should assess the assumptions before drawing conclusions from our results. 
+
+Call `plot` on the `lm` object to assess the assumptions graphically. The qq-plot (#2) is pretty terrible. Once again we might want to entertain a log transformation for income.
+
+```{r}
+plot(m1)
+```
+
+The qq-plot is much improved after running the regression on `log(income)`.
+
+```{r}
+m2 <- lm(log(income) ~ age, 
+         data = subset(acs12, income > 0))
+plot(m2)
+```
+
+And now the effect of age seems to emerge. The coefficient and associated hypothesis test provides good evidence that it's positive.
+
+```{r}
+summary(m2)
+```
+
+
+Because income is log transformed the regression output is harder to understand. We need to exponentiate the coefficient to get the multiplicative effect. Extract the coefficient with the `coef` function and then exponentiate.
+
+```{r}
+exp(coef(m2))
+```
+
+According to the output (if we believe it), each additional year of age increases income by about 3%. The intercept again makes no sense. 
+
+Is this model "good"? The Adjusted R-squared provides some indication of how well this model explains the variability in `log(income)`. It explains about 8% of the variability. Depending on past research and/or your field of study, 8% may be good or bad. 
+
+We can visualize simple linear regression using the `abline` function.
+
+```{r}
+plot(log(income) ~ age, data = subset(acs12, income > 0))
+abline(m2, col = "blue")
+```
+
+There is some association of age with income, but not a lot. The blue prediction line implies you would expect to earn the most money in your 80s and 90s. 
+
+The association appears to increase in the 20s and 30s but level off after that. This makes sense. We wouldn't expect income to increase indefinitely with age. One very simple way to accommodate this non-linear association is with a polynomial function. For example: income = age + age^2 + age^3. The `poly` function makes this rather easy to do. The second argument is the degree of the polynomial.
+
+```{r}
+m3 <- lm(log(income) ~ poly(age, degree = 3), 
+         data = subset(acs12, income > 0))
+summary(m3)
+```
+
+The Adjusted R-Squared has more than doubled to about 0.20. Still not great, but better. The diagnostic plots are largely unchanged if not slightly better. 
+
+Let's plot the prediction line. One way to do this is with the `predict` function. Just give it a model object name and the range of data on which to make a prediction using the `newdata` argument. Notice the new data needs to be in a data.frame. Finally we add the predicted line to the plot using the `lines` function.
+
+```{r}
+plot(log(income) ~ age, data = subset(acs12, income > 0))
+p <- predict(m3, newdata = data.frame(age = 16:90))
+lines(x = 16:90, p, col = "blue")
+```
+
+This "model" seems better at capturing the relationship between age and income. 
+What is the expected mean income for ages 25, 30, 35, 40, 45, and 50?
+
+```{r}
+# don't forget to use exp() to get dollar amounts
+predict(m3, newdata = data.frame(age = seq(25,50,5))) %>% 
+  exp()
+```
+
+To get 95% confidence intervals for these predicted means, set `interval = "confidence"`.
+
+```{r}
+predict(m3, newdata = data.frame(age = seq(25,50,5)), 
+        interval = "confidence") %>% 
+  exp()
+
+```
+
+There is MUCH MORE to regression and linear modeling. In real life we would probably model income by several predictors, such as education, gender, geographic location, etc. 
+
+
+## We're done!
+
+If you would like to talk more about statistics or need statistical help with your research, I would love to hear from you: `jcf2d@virginia.edu` or `statlab@virginia.edu`
+

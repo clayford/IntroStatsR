@@ -1,0 +1,87 @@
+---
+title: "Introductory Statistics Review"
+author: "Clay Ford"
+date: "Spring 2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Inferential statistics
+
+Sometimes it's impossible or impractical measure _everything_. For example, how many UVA students floss their teeth every day? 
+
+So we a take a sample. We ask 200 students if they floss daily. 
+
+We use that sample to make an _inference_ about the population. If 50 out of 200 students say they floss daily, we might infer that about 25% of all students floss their teeth daily. 
+
+That's inferential statistics: Trying to learn about a population based on a sample. 
+
+## The random sample
+
+Introductory statistical methods assume the sample is taken at _random_. 
+
+Ideally we would obtain a list of all UVA students and select 200 at random.
+
+Randomly asking 200 students at the rec center during the afternoon may not be the best sample. It could be _biased_ in some way by not including early risers, students who don't exercise, etc.
+
+Obtaining random, representative samples is hard and can get quite complex. 
+
+## Confidence intervals
+
+Let's say we get a true random sample and estimate 25% of UVA students floss daily. How certain are we? It's based on a sample. Another random sample might yield a different estimate. Say 28%. 
+
+The _confidence interval_ is meant to inform the uncertainty of our estimate. They are often stated as 95% confidence intervals. For example, 0.25, 95% CI [0.19, 0.32]. This says we're reasonably certain the true proportion of all students is somewhere between 19% and 32%.
+
+## Confidence intervals are not probability
+
+95% percent refers to the _process_ of computing confidence intervals. 
+
+1. Take a 100 random samples of 200 UVA students.
+2. Compute the confidence interval 100 times. 
+3. About 95 of those confidence intervals will contain the true population value.
+
+95% does NOT refer to probability.
+
+## Hypothesis tests
+
+Let's say 10 years ago the estimated proportion of UVA students who flossed was 30%. Our estimate this year was 25%. Is that difference real or simply due to our random sample?
+
+Hypothesis testing helps us answer this question.
+
+**Null**: Current population proportion is 30% (no difference)   
+**Alternative**: Current population proportion is not 30%
+
+Which hypothesis do we believe? This is usually answered with a _p-value_.
+
+## Interpreting p-values
+
+Let's say the true proportion of students who floss is unchanged from 10 years ago. It really is 30%. But we estimated 25%. What is the probability we would get a difference this big or bigger? That's the p-value. 
+
+In our case let's say _p_ = 0.14. What do we make of that?
+
+Tradition says:
+
+- "Fail to Reject the Null" if p > 0.05
+- Otherwise "Reject the Null" if p < 0.05.
+
+We may conclude we don't have enough evidence to say that the proportion of UVA students flossing is any different than it was 10 years ago.
+
+## Beware of p-values
+
+- A p-value is not the probability that null hypothesis is true
+- A p-value does not measure the size of an effect or the importance of a result
+- A p-value is simply the probability that a statistical summary of the data would be equal to or more extreme than its observed value if the null hypothesis were true
+
+See [The ASA Statement on p-values](https://amstat.tandfonline.com/doi/full/10.1080/00031305.2016.1154108#.XkMKvCNOmUk)
+
+## The analysis in R
+
+Here's how I analyzed this example (fake) data in R:
+
+```{r}
+prop.test(x = 50, n = 200, p = 0.3)
+```
+
