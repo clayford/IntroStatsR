@@ -11,6 +11,6 @@ R is available to everyone. The only prior knowledge assumed for this workshop i
 
 ## Workshop materials
 
-Download the zip file and extract the files. It contains an R script and a PDF notebook of the R script.
+Download the zip file and extract the files. It contains an R script, a PDF notebook of the R script, and a slide deck for reference.
 
-link coming soon!
+[IntroStatsR.zip](https://github.com/clayford/IntroStatsR/raw/master/IntroStatsR.zip)
