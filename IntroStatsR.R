@@ -32,10 +32,6 @@ acs12 <- read.csv("https://github.com/clayford/IntroStatsR/raw/master/data/acs12
 # str() shows us the structure of the data frame
 str(acs12)
 
-# NOTE: Factors are integers with character labels. Good to think of them as
-# categorical variables. By default the read.csv() function automatically
-# converts all columns containing text into factors.
-#
 # Can also click on the name in the Environment window to view the data.
 #
 # The summary function will provide summaries for all columns in a data frame.
@@ -534,7 +530,7 @@ ggplot(subset(acs12, income > 0), aes(x = log(income))) +
 # t-test for difference in log-transformed means
 t.test(log(income) ~ gender, data = subset(acs12, income > 0))
 
-# The result is still quite large and signficant, but difficult to interpret. We
+# The result is still quite large and significant, but difficult to interpret. We
 # need to exponentiate to get data on original scale. First let's save the
 # result.
 t.out <- t.test(log(income) ~ gender, data = subset(acs12, income > 0))
@@ -647,7 +643,7 @@ xtabs(~ race + employment, data = acs12) %>%
   prop.table(margin = 1) %>% 
   round(3)
 
-# Is there an assocation between race and employment? Does knowing race give us
+# Is there an association between race and employment? Does knowing race give us
 # additional information about the proportions of employment levels?
 #
 # A common approach to answering this question is the chi-square test. The

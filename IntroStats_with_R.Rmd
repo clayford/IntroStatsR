@@ -28,6 +28,10 @@ Insert a new R code chunk below and type/run the code: 22/7
 
 ## Load packages
 
+The magrittr package provides us with a "pipe" function: `%>%`
+
+We will use this function to send the results of one function into the first argument of the next function. If that doesn't make sense, don't worry, it will!
+
 ```{r}
 library(magrittr)
 ```
@@ -116,7 +120,7 @@ mean(acs12$lang == "other", na.rm = TRUE)
 
 So about 19%.
 
-How certain is that estimate? Another sample would yield slightly different results. _Confidence intervals help us quantify the uncertainty._ They provide an estimated lower and upper bound of our estimate.
+How certain is that estimate? Another sample would give us a slightly different result. _Confidence intervals help us quantify the uncertainty._ They provide an estimated lower and upper bound of our estimate.
 
 The `prop.test()` function returns a 95% confidence interval for an estimated proportion. It requires number of "successes" (ie, number who reported "other") and total number of "trials" (ie, number of respondents who answered the question).
 
@@ -143,7 +147,7 @@ mosaic::prop.test(acs12$hrs_work > 50)
 
 ```
 
-About 0.9, with 95% CI of (0.07, 0.11).
+About 0.09, with 95% CI of (0.07, 0.11).
 
 ### Exercise 2
 
@@ -182,13 +186,6 @@ t.test(acs12$income)
 
 The 95% CI is about (21332, 25867). Again the hypothesis test results are irrelevant. 
 
-One way to get a 95% confidence interval for a median is to use the `wilcox.text` function with `conf.int = TRUE`. Notice the output calls the median the "(pseudo)median". There are some sophisticated mathematics going on here, but this is probably a good way to go if you need a CI for a median.
-
-```{r}
-wilcox.test(acs12$income, conf.int = TRUE)
-```
-
-The 95% CI for the median is (30850, 35000).
 
 ### Exercise 3
 
@@ -203,6 +200,12 @@ Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (M
 
 The following code creates a two-way contingency table with gender in the rows and employment in the columns using `xtabs`. The table is then "piped" into the `proportions` function. The argument `margin=1` says to calculate proportions along the rows. The result says about 6% of females are unemployed and that about 7% of males are unemployed. That's a difference of 1%.
 
+The `%>%` operator can be entered in RStudio using the following keyboard shortcuts:
+
+- Ctrl + Shift + M (Win/Linux)
+- Cmd + Shift + M (Mac)
+
+
 ```{r}
 xtabs(~ gender + employment, data = acs12) %>% 
   proportions(margin = 1)
@@ -210,28 +213,14 @@ xtabs(~ gender + employment, data = acs12) %>%
 
 Is this difference real? If we took another sample, would we get a similar result? Or might it flip and show more females being unemployed?
 
-This is where hypothesis testing can be useful. Two competing hypotheses:
+This is where _hypothesis testing_ can be useful. Two competing hypotheses:
 
 - Null: no difference between proportions
 - Alternative: the proportions are different
 
 To execute a hypothesis test comparing two proportions we can use the `prop.test` function. The first argument is the number of "successes" or occurrences. The second argument is the number of "trials" or observed responses. 
 
-Number of females and males reporting unemployed are 47 and 59, respectively:
-
-```{r}
-xtabs(~ gender + employment, data = acs12)
-```
-
-The total number of _observed_ females and males who reported employment status is 793 and 812, respectively. Below we pipe the result of `xtabs` into the `margin.table` function and set `margin=1` to sum the margins along the rows.
-
-```{r}
-xtabs(~ gender + employment, data = acs12) %>% 
-  margin.table(margin = 1)
-
-```
-
-Another option is the `addmargins` function
+Number of females and males reporting unemployed are 47 and 59, respectively. The total number of _observed_ females and males who reported employment status is 793 and 812, respectively. Below we use the `addmargins` function to get row and column totals.
 
 ```{r}
 xtabs(~ gender + employment, data = acs12) %>% 
@@ -260,11 +249,12 @@ Notice we hard-coded the numbers into the function. There's nothing wrong with t
 
 ```{r}
 # save table
-tab <- xtabs(~ gender + employment, data = acs12)
+tab <- xtabs(~ gender + employment, data = acs12) %>% 
+  addmargins()
 # extract and save the "unemployed" column
-X <- tab[,"unemployed"]
+X <- tab[1:2,"unemployed"]
 # extract and save the marginal totals of gender
-N <- tab %>% margin.table(margin = 1)
+N <- tab[1:2,"Sum"]
 # run prop.test with X and N
 prop.test(x = X, n = N)
 ```
@@ -547,7 +537,7 @@ According to the output (if we believe it), each additional year of age increase
 
 Is this model "good"? The Adjusted R-squared provides some indication of how well this model explains the variability in `log(income)`. It explains about 8% of the variability. Depending on past research and/or your field of study, 8% may be good or bad. 
 
-We can visualize simple linear regression using the `abline` function.
+We can visualize simple linear regression using the `abline` function. 
 
 ```{r}
 plot(log(income) ~ age, data = subset(acs12, income > 0))

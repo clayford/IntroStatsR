@@ -1,0 +1,514 @@
+---
+title: "Introductory Statistics with R"
+author: "Clay Ford, Statistical Research Consultant, UVA Library"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Quick Intro to R Notebooks and R Markdown
+
+This is an R Markdown Notebook. When you execute code within the notebook, the results appear beneath the code. This file was created in RStudio by going to File...New File...R Notebook.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing  *Ctrl+Shift+Enter* (Win/Linux) or *Cmd+Shift+Return* (Mac).  
+
+```{r}
+plot(cars)
+```
+
+To hide the output, click the Expand/Collapse output button. To clear results (or an error), click the "x". 
+
+You can also press *Ctrl+Enter* (Win/Linux) or *Cmd+Return* (Mac) to run one line of code at a time (instead of the entire chunk).
+
+Add a new R code chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac).  
+
+## Exercise 0 (code along)
+
+Insert a new R code chunk below and type/run the code: 22/7
+
+## Load packages
+
+We will use the following packages in this workshop. 
+
+```{r}
+library(magrittr)
+# library(binom)
+# 
+# # Suppress the numerous start up messages these two packages produce
+# suppressPackageStartupMessages(library(Hmisc))
+# suppressPackageStartupMessages(library(mosaic))
+```
+
+## Load data 
+
+Today we'll work with a sample of the 2012 US Census American Community Survey. (https://www.census.gov/programs-surveys/acs). I obtained this data from the openintro package, which accompanies the OpenIntro Statistics textbook: https://www.openintro.org/book/os/
+
+Strictly speaking, this is _not_ a simple random sample, which is assumed when performing inferential statistics at the introductory level. However we will treat it as such for the purposes of today's class since it provides us one versatile, easy-to-understand data set to demonstrate multiple statistical methods. 
+
+The following code imports the acs12.csv file; the result is a data frame.
+
+```{r}
+acs12 <- read.csv("https://github.com/clayford/IntroStatsR/raw/master/data/acs12.csv")
+
+```
+
+The `str()` function shows us the structure of the data frame. The names following the `$` are the column or variable names. "int" means integer. "chr" means character. Our data has 2000 observations and 13 variables. "NA" means "Not Available" (ie, missing).
+
+```{r}
+str(acs12)
+```
+
+You can also click on the name in the Environment window to view the data.
+
+To get a quick summary of one of the numeric columns, use `summary`:
+
+```{r}
+summary(acs12$income)
+```
+
+To get a quick summary of one of the character columns, use `table` or `xtabs`
+
+```{r}
+table(acs12$gender)
+```
+
+The `xtabs` provides a few more conveniences, so we'll use it for the remainder of the class.
+
+```{r}
+xtabs(~ gender, data = acs12)
+```
+
+
+## Counts and Proportions 
+
+### Counts - the most fundamental statistic
+
+The `xtabs()` function generates counts of unique values for variables in a data frame. If each row represents an observation, then nothing goes on the left hand side of the `~`. For example, to count up different "employment" responses.
+
+```{r}
+xtabs(~ employment, data = acs12)
+```
+
+
+By default it excludes missing data. To see if there are missing data, set `addNA = TRUE`
+
+```{r}
+xtabs(~ employment, data = acs12, addNA = TRUE)
+```
+
+The `xtabs` function can take more than one variable, producing cross tabulations. Include additional variables with a `+`. The first variable will be the row, the second will be the columns, and additional variables will form strata. Below we see there are no missing values for race, but quite a few for employment status. These are likely children.
+
+```{r}
+xtabs(~ employment + race, data = acs12, addNA = TRUE)
+```
+
+The `xtabs` function can also create cross-tabulations if you have a column of frequencies. That's when you use the left-hand of the formula in addition to the right. For example, here's some fake data on males and females and whether they answered yes or no:
+
+```{r}
+d <- data.frame(Freq = c(12, 15, 32, 24),
+                gender = c("M", "M", "F", "F"),
+                answer = c("Yes", "No", "Yes", "No"))
+d
+```
+
+12 Males answered Yes, 15 Males answered No, etc. To convert to a cross-tabulation using `xtabs`:
+
+```{r}
+xtabs(Freq ~ gender + answer, data = d)
+```
+
+
+### Exercise 1 (code along)
+
+Create a cross tabulation for the "edu" and "married" variables
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+```{r}
+xtabs(~ edu + married, data = acs12, addNA = TRUE)
+```
+
+### Counts of conditions
+
+We can also count things satisfying a condition. For example, how many people in our data set are age 60? Over the age of 18? Over age 70 and employed?
+
+-  ==  EQUAL
+-  !=  NOT EQUALS
+-  >   GREATER THAN
+-  <   LESS THAN
+-  >=  GREATER THAN OR EQUAL
+-  <=  LESS THAN OR EQUAL
+
+How many people are age 60? `acs12$age == 60` returns a vector of TRUE/FALSE values, which are represented numerically as 0 and 1. The `sum` function counts the number of 1s.
+
+```{r}
+sum(acs12$age == 60)
+```
+
+How many people are over age 60?
+
+```{r}
+sum(acs12$age > 60)
+```
+
+
+How many people commute more than 60 minutes to work? We get NA because some people have missing "time_to_work" values.
+
+```{r}
+sum(acs12$time_to_work > 60)
+```
+
+That's a feature, not a bug. To ignore missing values, specify `na.rm = TRUE`.
+
+```{r}
+sum(acs12$time_to_work > 60, na.rm = TRUE)
+```
+
+
+How many people do NOT have employment = "employed".
+
+```{r}
+sum(acs12$employment != "employed", na.rm=TRUE)
+```
+
+
+We can also combine conditions
+-    & (AND) 
+-    | (OR)
+
+How many married AND work more than 50 hours
+
+```{r}
+sum(acs12$married == "yes" & acs12$hrs_work > 50, na.rm = TRUE)
+```
+
+
+How many people are under age 18 OR over age 65
+
+```{r}
+sum(acs12$age < 18 | acs12$age > 65)
+```
+
+### Exercise 2
+
+How many people earn more than $100,000?
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+```{r}
+sum(acs12$income > 100000, na.rm = TRUE)
+```
+
+
+### Proportions - giving context to counts
+
+We saw that 466 people are over the age of 60 in our data. What proportion of the total is that? One way to calculate that is to divide the count by the total number of records.
+
+```{r}
+sum(acs12$age > 60)/nrow(acs12)
+```
+
+An easier and more efficient way is to take the mean using the `mean` function. The mean of 0s and 1s is the proportion of 1s.
+
+```{r}
+mean(acs12$age > 60)
+
+```
+
+
+What proportion of people commute over 60 minutes to work?
+
+```{r}
+mean(acs12$time_to_work > 60, na.rm = TRUE)
+```
+
+
+Use the `prop.table` function to get proportions from tables.
+
+
+```{r}
+prop.table(xtabs(~ employment, data = acs12))
+# NOTE: these are proportions of non-missing!
+```
+
+
+Notice the difference if we include the missings:
+
+```{r}
+prop.table(xtabs(~ employment, data = acs12, addNA = TRUE))
+```
+
+With the tidyverse package loaded, we can use pipes instead of nesting functions. For example:
+
+```{r}
+xtabs(~ employment, data = acs12) %>% prop.table()
+
+```
+
+Use the `round` function to round results to 2 places.
+
+```{r}
+xtabs(~ employment, data = acs12) %>% 
+        prop.table() %>% 
+        round(2)
+
+```
+
+When we use `prop.table` with two-way tables we need to specify within which _margin_ to calculate proportions (1 = row, 2 = column)
+
+```{r}
+xtabs(~ employment + race, data = acs12) %>% 
+  prop.table(margin = 2) %>% # proportions within columns
+  round(2)
+```
+
+
+### Exercise 3
+
+What proportion of people earn more than $100,000?
+
+Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+```{r}
+mean(acs12$income > 100000, na.rm = TRUE)
+
+```
+
+
+### Confidence intervals of proportions
+
+The proportions we just calculated are just estimates. How certain are we? Another sample would yield slightly different results.
+
+Confidence intervals help us quantify the uncertainty. They provide an
+estimated lower and upper bound of our estimate.
+
+95% Confidence Interval theory: randomly sample the data, calculate a 95% confidence interval, repeat many times. About 95% of confidence intervals will contain the "true" value you're estimating. 
+
+**Example**: how certain are we about 0.53 employed?
+
+The `prop.test()` function returns a 95% confidence interval for an estimated
+proportion.
+
+The `prop.test()` function requires number of "successes" (ie, number employed)
+and total number of "trials" (ie, number of respondents).
+
+Number of Employed: 843
+
+```{r}
+sum(acs12$employment == "employed", na.rm = TRUE)
+```
+
+Total number who responded (ie, total not missing): 1605
+
+sum(!is.na(acs12$employment)) = "sum of non-missing employment responses"
+
+```{r}
+sum(!is.na(acs12$employment))
+```
+
+Plug value into `prop.test()`
+
+```{r}
+# x = number of "successes", n = number of "trials"
+prop.test(x = 843, n = 1605)
+
+```
+
+95 percent confidence interval: (0.50, 0.55)
+
+We can save the result into an object and extract:
+
+```{r}
+p.out <- prop.test(x = 843, n = 1605)
+p.out$conf.int
+
+```
+
+The mosaic version of `prop.test` allows us to simply use a conditional expression. (Note: placing the package name and two colons before a function tells R to use the function in that package.)
+
+```{r}
+mosaic::prop.test(acs12$employment == "employed")
+```
+
+
+The `prop.test` function in the stats package that comes with R cannot do this.
+
+Recall we sometimes want to derive proportions from numeric data. Example: proportion of people working more than 40 hours
+
+```{r}
+mean(acs12$hrs_work > 40, na.rm = TRUE)
+```
+
+How certain are we about that proportion? 
+
+```{r}
+mosaic::prop.test(acs12$hrs_work > 40)
+```
+
+95 percent confidence interval: (0.21, 0.27)
+
+### Exercise 4
+
+What proportion of ACS respondents are married? (Hint: the "married" variable has two responses: "yes" or "no"). As a population estimate, how certain is it? Calculate a 95% confidence interval.
+
+```{r}
+mosaic::prop.test(acs12$married == "yes")
+```
+
+## Means and Medians
+
+The mean and median are two measures of center.
+
+Calling `summary()` on a numeric variable returns the mean and median
+
+```{r}
+summary(acs12$hrs_work)
+```
+
+
+The median is the middle of the sorted data.  
+The mean is the "balance point" of the data.  
+Symmetric data have similar means and medians.   
+
+`mean` and `median` functions are available; if any data is missing the result is NA
+
+```{r}
+mean(acs12$hrs_work)
+median(acs12$hrs_work)
+```
+
+Specify `na.rm = TRUE` to ignore missing data.
+
+```{r}
+mean(acs12$hrs_work, na.rm = TRUE)
+median(acs12$hrs_work, na.rm = TRUE)
+```
+
+Histograms are good to visualize the distribution of numeric variables
+
+```{r}
+hist(acs12$hrs_work)
+```
+
+Numeric measures of spread include the standard deviation: `sd()`. Good to use when data is symmetric.
+
+```{r}
+sd(acs12$hrs_work, na.rm = TRUE)
+```
+
+The Interquartile Range (difference between 75th and 25th quartiles) is another measure of spread; `IQR()` Good to use when data is not symmetric. 
+
+```{r}
+IQR(acs12$hrs_work, na.rm = TRUE)
+```
+
+No need to pick one. Can always report both.
+
+Recall the estimated mean of hrs_work
+
+```{r}
+mean(acs12$hrs_work, na.rm = TRUE)
+
+```
+
+The mean of 37.977 is just an estimate. How certain are we about the mean? Another sample would yield slightly different results. The `t.test()` function returns a 95% confidence interval for a mean. Notice we do not need `na.rm = TRUE`
+
+```{r}
+t.test(acs12$hrs_work)
+```
+
+CI: (37.1, 38.8)
+
+We can save into an object and access the confidence interval directly
+
+```{r}
+t.out <- t.test(acs12$hrs_work)
+t.out$conf.int
+
+```
+
+The `wilcox.test()` function returns a CI for medians with `conf.int = TRUE`. 
+
+```{r}
+wilcox.test(acs12$hrs_work, conf.int = TRUE)
+```
+
+The "(pseudo)median" estimate is slightly different from the observed median. This is known as a "non-parametric" estimate, which means we're not making any assumptions about the distribution of hours worked. Non-parametric estimates are often used for small data sets with non-symmetric distributions. 
+
+
+### Exercise 5
+
+What is the mean "time to work" of ACS respondents? ("time to work" is the time it takes to commute to work in minutes.) As a population estimate, how certain is it? Calculate a confidence interval.
+ 
+
+```{r}
+t.test(acs12$time_to_work)
+```
+
+## Comparing two proportions
+
+We often want to compare two proportions. Example: Is there a difference between the proportion of people with disabilities between citizens and non-citizens?
+
+```{r}
+xtabs(~ citizen + disability, data = acs12) %>% 
+  prop.table(margin = 1) %>% 
+  round(2)
+```
+
+
+About 0.11 of non-citizens have a disability. About 0.17 of citizens have a disability. That's a difference of about 0.06. How certain are we about that
+difference? Would another random sample result in a difference in the opposite
+direction?
+
+We can use the `prop.test` function to carry out a hypothesis test of no difference between these proportions. The first argument `x` takes the vector of "successes" (disability = "yes") and the second argument `n` takes the vector of trials or total observations within each group (citizen vs non-citizen).
+
+We can get marginal totals using the `addmargins` function. In this case the margin argument indicates which margin to add across. 
+
+```{r}
+xtabs(~ citizen + disability, data = acs12) %>% 
+  addmargins(margin = 2)
+```
+
+```{r}
+prop.test(x = c(13, 311), n = c(118, 1882))
+```
+
+The p-value says there's about a 15% chance of getting a difference bigger than than what we observed (about 0.06) if there really is no difference between the proportions.
+
+Traditionally we judge a difference "significant", or not due to chance alone, if the p-value is small, say below 0.05.
+
+In this case, we might conclude: 
+
+- "with the current sample size the data were unable to overcome the
+  supposition of no difference in the proportions" 
+
+The 95 percent confidence interval is on the difference of proportions. Since it overlaps 0 (barely) we're uncertain about the direction of the difference.
+
+Again, we can save the result and extract quantities such as the CI.
+
+```{r}
+ptest <- prop.test(x = c(13, 311), n = c(118, 1882))
+ptest$conf.int
+
+```
+
+
+### Exercise 6
+
+Compare the proportion of people with disabilities between male and female (gender). What is the confidence interval of the difference of proportions?
+
+```{r}
+xtabs(~ edu + disability, data = acs12, exclude = "college") %>% 
+  prop.table(margin = 1) %>% 
+  round(2)
+```
+
+```{r}
+xtabs(~ edu + disability, data = acs12, exclude = "college") %>% 
+  addmargins(margin = 2)
+```
+
+```{r}
+prop.test(x = c(12, 273), n = c(144, 1439))
+```
+
