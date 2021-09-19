@@ -22,10 +22,13 @@ You can also press *Ctrl+Enter* (Win/Linux) or *Cmd+Return* (Mac) to run one lin
 
 Add a new R code chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac).  
 
-## Exercise 0 (code along)
+## Code Along 0 
 
 Insert a new R code chunk below and type/run the code: 22/7
 
+```{r}
+22/7
+```
 
 
 ## Load packages
@@ -72,11 +75,16 @@ To get a quick summary of one of the character columns, use `table`:
 table(acs12$employment)
 ```
 
-### Exercise 1 (code along)
+## Code Along 1
 
 Summarize the "edu" and "time_to_work" columns.
 
 Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+```{r}
+summary(acs12$time_to_work)
+table(acs12$edu)
+```
 
 
 
@@ -104,10 +112,10 @@ For example, what proportion of the population reports speaking a language besid
 What are the options?
 
 ```{r}
-unique(acs12$lang)
+table(acs12$lang)
 ```
 
-To get the proportion who speak "other", use the `mean` function.
+To get the proportion who speak "other", we can use the `mean` function.
 
 ```{r}
 mean(acs12$lang == "other")
@@ -126,15 +134,25 @@ How certain is that estimate? Another sample would give us a slightly different 
 
 The `prop.test()` function returns a 95% confidence interval for an estimated proportion. It requires number of "successes" (ie, number who reported "other") and total number of "trials" (ie, number of respondents who answered the question).
 
-Here's one way to use `prop.test`. Calculate the number who answered "other" and the number of non-missing responses to the "lang" question.
+```{r}
+table(acs12$lang)
+```
+
+The `x` argument takes number of successes.
+The `n` argument takes number of trials or observations.
+
+```{r}
+prop.test(x = 368, n = 1527 + 368)
+```
+The reported 95% confidence interval is about (0.18, 0.21). We'll talk about the p-value and alternative hypothesis later in the workshop. For this question it's not relevant. 
+
+Above we manually typed the numbers, which is an opportunity to make a mistake. Here's one way to avoid that. Calculate the number who answered "other" and the number of non-missing responses to the "lang" question.
 
 ```{r}
 other <- sum(acs12$lang == "other", na.rm = TRUE)
 N <- sum(!is.na(acs12$lang))
 prop.test(x = other, n = N)
 ```
-
-The reported 95% confidence interval is about (0.18, 0.21). We'll talk about the p-value and alternative hypothesis later in the workshop. For this question it's not relevant. 
 
 The mosaic version of `prop.test` allows us to simply use a conditional expression. (Note: placing the package name and two colons before a function tells R to use the function in that package.)
 
@@ -151,11 +169,16 @@ mosaic::prop.test(acs12$hrs_work > 50)
 
 About 0.09, with 95% CI of (0.07, 0.11).
 
-### Exercise 2
+## Code Along 2
 
 Estimate the proportion of the population that earns more than $100,000/year along with a confidence interval.
 
 Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
+
+```{r}
+mosaic::prop.test(acs12$income > 100000)
+```
+
 
 
 ## Estimating means with confidence intervals
@@ -189,12 +212,15 @@ t.test(acs12$income)
 The 95% CI is about (21332, 25867). Again the hypothesis test results are irrelevant. 
 
 
-### Exercise 3
+## Code Along 3
 
 Estimate the mean time_to_work (ie, commute time) with a 95% confidence interval. Take a look at the distribution as well.
 
 Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
 
+```{r}
+t.test(acs12$time_to_work)
+```
 
 
 
@@ -261,7 +287,7 @@ N <- tab[1:2,"Sum"]
 prop.test(x = X, n = N)
 ```
 
-### Exercise 4
+## Code Along 4
 
 About 20% of people with no disability report having a college degree. Likewise, About 12% of people with a disability report having a college degree. Perform a hypothesis test to compare the proportions.  
 
@@ -296,11 +322,11 @@ t.test(hrs_work ~ married, data = acs12)
 
 The p-value is virtually 0. There is almost no chance of seeing a difference in means bigger than what we observed if there truly was no difference in the population. 
 
-The 95% confidence interval is on the difference of the means. It is more informative than the p-value. It provides information on the direction and magnitude of the difference. The p-values does not provide this information. The 95% CI is (-7.1, -3.7). It appears that married people work at least 3.7 hours more per week than non-married people. 
+The 95% confidence interval is on the difference of the means. _It is more informative than the p-value_. It provides information on the direction and magnitude of the difference. The p-values does not provide this information. The 95% CI is (-7.1, -3.7). It appears that married people work at least 3.7 hours more per week than non-married people. 
 
-Note: Be cautious before concluding that being married _causes_ someone to work longer hours. This simply hypothesis test looked at everyone of all ages working full-time and part-time. Perhaps if we compared hours worked between married and non-married people _among full-time workers_ we would see a different result. 
+Note: Be cautious before concluding that being married _causes_ someone to work longer hours. This simple hypothesis test looked at everyone of all ages working full-time and part-time. Perhaps if we compared hours worked between married and non-married people _among full-time workers_ we would see a different result. 
 
-### Exercise 5
+## Code Along 5
 
 Calculate mean hours worked per week for males and females (gender). Perform a hypothesis test to compare the means.
 
@@ -326,9 +352,9 @@ tab <- xtabs(~ race + edu, data = acs12)
 chisq.test(tab)
 ```
 
-The output is minimal. The small p-value appears to indicate that some association is present. But where is it? How strong is it? Which race has higher or lower levels of education than would be expected if there was no association?
+The output is minimal. The small p-value provides evidence that some association is present. But where is it? How strong is it? Which race has higher or lower levels of education than would be expected if there was no association?
 
-One way to check this is to look at the "residuals". Anything cell higher than 2 in absolute value is a place of "strain" or "interest"
+One way to check this is to look at the "residuals". Any cell higher than 2 in absolute value is a place of "strain" or "interest"
 
 ```{r}
 ct <- chisq.test(tab)
@@ -345,7 +371,7 @@ mosaicplot(tab, shade = TRUE)
 
 Note: Small cell counts (less than 5) can lead to warnings that say "Chi-squared approximation may be incorrect". When that happens we're basically being told "beware, you have a small amount of data."
 
-### Exercise 6
+## Code Along 6
 
 Is race associated with employment? If so, how so?
 
@@ -377,7 +403,7 @@ Yes, working more hours usually leads to higher income, but it's not a certainty
 
 Correlation only informs us about linear association. It says nothing about the nature of the association other than "positive" or "negative". How much can income be expected to increase for each additional hour worked? That's a question answered by regression.
 
-### Exercise 7 
+## Code Along 7 
 
 Is age associated with income? Calculate the correlation and a 95% confidence interval. Also plot the data.
 
@@ -389,7 +415,7 @@ Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (M
 Does mean income change according to education? Recall education has three levels.
 
 ```{r}
-unique(acs12$edu)
+table(acs12$edu)
 ```
 
 The mean income for all three levels of education can be calculated using aggregate.
@@ -405,9 +431,9 @@ aov1 <- aov(income ~ edu, data = acs12)
 summary(aov1)
 ```
 
-The output is the familiar ANOVA table. The small p-value tells us the probability of seeing means that differ more so than these 3 means, assuming they're really all equal in the population, is virtually 0. That's all it says. It doesn't tell us how the differ or in what direction. To investigate that we usually follow-up with what are usually called post-hoc tests.
+The output is called an ANOVA table. The small p-value tells us the probability of seeing means that differ more so than these 3 means, assuming they're really all equal in the population, is virtually 0. That's all it says. It doesn't tell us how they differ or in what direction. To investigate that we usually follow-up with what are usually called post-hoc tests.
 
-One built-in to R that works with `aov` objects is `TukeyHSD`. That stands for Tukey's Honestly Significant Differences. Just use it with the saved `aov` object. It calculates pairwise differences and tests if they're plausibly different from 0, using _adjusted p-values_, (ie, larger p-values due to performing more than one hypothesis test). All of these differences appear to be quite large and quiet real. 
+One built-in to R that works with `aov` objects is `TukeyHSD`. That stands for Tukey's Honestly Significant Differences. Just use it with the saved `aov` object. It calculates pairwise differences and tests if they're plausibly different from 0, using _adjusted p-values_, (ie, larger p-values due to performing more than one hypothesis test). All of these differences appear to be quite large and quite real. 
 
 ```{r}
 TukeyHSD(aov1)
@@ -429,7 +455,7 @@ boxplot(income ~ edu, data = acs12)
 
 We no doubt have some very large income values driving those means!
 
-### Exercise 8
+## Code Along 8 
 
 How does mean income differ between race? Do the following:
 
@@ -459,7 +485,7 @@ plot(aov1)
 
 What does this mean? _It usually means our "model" is deficient in some way_. A one-way ANOVA is basically a model that says (in our case) mean income can be explained by education. If we know someone's education level we can make a good estimate of their expected income. The violation of the assumptions tells us there are probably other factors that affect income and that our model is too simple.  
 
-What can we do if we want to still use the one-way ANOVA? A common approach is to log transform the numeric data and see if that helps. A log transformation is a non-linear transformation the sometimes makes data a little more symmetric. It only works on positive numbers, so we'll need to subset our data to only use income greater than 0. Fortunately we can do all this on-the-fly in R using the `log` and `subset` functions. So now our analysis is slightly different. We're only comparing mean incomes for people who earn more than 0. And as we'll see, the interpretation is more complicated.
+What can we do if we want to still use the one-way ANOVA? A common approach is to _log transform_ the numeric data and see if that helps. A log transformation is a non-linear transformation the sometimes makes data a little more symmetric. It only works on positive numbers, so we'll need to subset our data to only use income greater than 0. Fortunately we can do all this on-the-fly in R using the `log` and `subset` functions. So now our analysis is slightly different. We're only comparing mean incomes for people who earn more than 0. And as we'll see, the interpretation is more complicated.
 
 ```{r}
 aov2 <- aov(log(income) ~ edu, data = subset(acs12, income > 0))
@@ -478,7 +504,7 @@ How about the post-ANOVA pairwise differences?
 TukeyHSD(aov2)
 ```
 
-They appear to be significantly different, but they're on the log scale and impossible to interpret. Log transforming a numeric variable when doing ANOVA implies the effect of group is multiplicative instead of additive. To see that multiplicative effect we need to exponentiate the results. We can do this by saving the `TukeyHSD` result and transforming the log values using the `exp` function.
+They appear to be significantly different, but they're on the log scale and impossible to interpret meaningfully. Log transforming a numeric variable when doing ANOVA implies the effect of group is multiplicative instead of additive. To see that multiplicative effect we need to exponentiate the results. We can do this by saving the `TukeyHSD` result and transforming the log values using the `exp` function.
 
 ```{r}
 t.out <- TukeyHSD(aov2)

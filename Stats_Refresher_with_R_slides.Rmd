@@ -1,0 +1,143 @@
+---
+title: "Basic Statistics Refresher with R"
+author: "Clay Ford"
+date: "Fall 2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Inferential Statistics
+
+Often it's impossible or impractical measure _everything_. 
+
+- What proportion of UVA students floss their teeth every day? 
+- How many cups of coffee on average do Americans drink?
+- How far on average do Virginians commute to work?
+- What is the average trunk diameter of mature white oak trees?
+
+So we do our best to take a _random sample_. Inferential Statistics means using a sample to infer something about the population.
+
+
+## Flossing at UVA
+
+We ask 200 _random_ students if they floss daily. 
+
+If 50 out of 200 students say they floss daily, we might infer that _about_ 25% of all students floss their teeth daily. 
+
+50/200 = 0.25
+
+We doubt it's _exactly_ 25%, but we have some idea of the proportion of students who floss.
+
+## The random sample
+
+Valid statistical inference assumes a sample is taken at _random_. 
+
+Ideally we would obtain a list of all UVA students and select 200 at random.
+
+Randomly asking 200 students at the rec center during the afternoon may not be the best sample. It could be _biased_ in some way by not including early risers, students who don't exercise, etc.
+
+Obtaining random, representative samples is usually hard. 
+
+## Confidence intervals
+
+Let's say we get a true random sample and estimate 25% of UVA students floss daily. How certain are we? It's based on a sample. Another random sample might yield a different estimate. Say 28%. 
+
+The _confidence interval_ is meant to inform the uncertainty of our estimate. They are often stated as 95% confidence intervals. For example:
+
+0.25, 95% CI [0.19, 0.32]. 
+
+This says the true proportion is plausibly between 19% and 32%.
+
+## Confidence intervals are not probability
+
+95% percent refers to the _process_ of computing confidence intervals. 
+
+1. Take a 100 random samples of 200 UVA students.
+2. Compute the confidence interval 100 times. 
+3. About 95 of those confidence intervals will contain the true population value.
+
+95% does NOT refer to probability.
+
+## Hypothesis tests
+
+Let's say two years ago the estimated proportion of UVA students who flossed was 30%. Our estimate this year was 25%. Is that difference real or simply due to our random sample?
+
+Hypothesis testing helps us answer this question.
+
+**Null**: Current population proportion is 30% (no difference)   
+**Alternative**: Current population proportion is not 30%
+
+Which hypothesis do we believe? This is usually answered with a _p-value_.
+
+## Interpreting p-values
+
+Let's say the true proportion of students who floss is unchanged from two years ago. It really is 30%. But we estimated 25%. What is the probability we would get a difference this big or bigger? That's the p-value. 
+
+In our case let's say _p_ = 0.14. What do we make of that?
+
+Tradition says:
+
+- "Fail to Reject the Null" if p > 0.05
+- Otherwise "Reject the Null" if p < 0.05.
+
+In this case, we may conclude we don't have enough evidence to confidently say that the proportion of UVA students flossing is any different than it was 10 years ago.
+
+## Interpret p-values correctly
+
+- A p-value is _not_ the probability that null hypothesis is true.
+- A p-value _does not_ measure the size of an effect or the importance of a result.  
+- A p-value _does not_ allow you to make a binary decision with certainty.
+- A p-value is the probability that a statistical summary of the data would be equal to or more extreme than its observed value if the null hypothesis were true.
+
+See [Moving to a World Beyond "p < 0.05"](https://www.tandfonline.com/doi/full/10.1080/00031305.2019.1583913)
+
+
+## Use hypothesis tests wisely
+
+- A null hypothesis is rarely plausible or even possible (do we really think the true proportion of students who floss is _exactly_ the same as two years ago?)
+- A p-value _does not_ tell us about the difference in proportions.
+- Rejecting the null _does not_ tell us how different the proportions may be.
+- Failing to reject the null _does not_ mean the proportions are exactly the same.
+- Hypothesis tests help us detect evidence of some effect, but do not measure the effect.
+
+## Confidence intervals revisted
+
+- Confidence intervals give us an indication of the _magnitude_ and _direction_ of the effect.
+- For our flossing research, we should calculate a confidence interval on the _difference of proportions_.
+- Let's say we calculate a 95% confidence interval on the difference to be 0.05 95% CI [-0.04, 0.14].
+- We're not sure if the proportion is higher or lower than it was 2 years ago. That's the conclusion.
+
+
+## The analysis in R
+
+One-sample hypothesis test. Null: proportion who floss is 0.30
+
+```{r}
+prop.test(x = 50, n = 200, p = 0.3)
+```
+
+## The analysis in R
+
+Two-sample hypothesis test. Null: proportion has not changed in two years
+
+```{r}
+prop.test(x = c(60, 50), n = c(200, 200))
+```
+
+## ATOM
+
+The American Statistical Association [recommends](https://www.tandfonline.com/doi/full/10.1080/00031305.2019.1583913) the following when doing statistical inference:
+
+- **A**ccept uncertainty
+- Be **t**houghtful
+- Be **o**pen
+- Be **m**odest 
+
+## It's funny because it's true, sadly
+
+![](tweet.jpg)
+<br><br><br>
+Note: RR = "Risk Ratio", another way to compare two proportions. A ratio of 1 implies "no difference".
