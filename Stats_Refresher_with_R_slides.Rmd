@@ -55,41 +55,41 @@ This says the true proportion is plausibly between 19% and 32%.
 
 95% percent refers to the _process_ of computing confidence intervals. 
 
-1. Take a 100 random samples of 200 UVA students.
-2. Compute the confidence interval 100 times. 
+1. Imagine taking a 100 random samples of 200 UVA students.
+2. Compute a confidence interval for each sample.
 3. About 95 of those confidence intervals will contain the true population value.
 
 95% does NOT refer to probability.
 
 ## Hypothesis tests
 
-Let's say two years ago the estimated proportion of UVA students who flossed was 30%. Our estimate this year was 25%. Is that difference real or simply due to our random sample?
+Let's say two years ago the estimated proportion of UVA students who flossed was 31%. Our estimate this year was 25%. Is that difference real or simply due to our random sample?
 
 Hypothesis testing helps us answer this question.
 
-**Null**: Current population proportion is 30% (no difference)   
-**Alternative**: Current population proportion is not 30%
+**Null**: no difference in proportions  
+**Alternative**: proportions are different
 
 Which hypothesis do we believe? This is usually answered with a _p-value_.
 
 ## Interpreting p-values
 
-Let's say the true proportion of students who floss is unchanged from two years ago. It really is 30%. But we estimated 25%. What is the probability we would get a difference this big or bigger? That's the p-value. 
+Let's say there really is no difference in the proportion of students who floss from two years ago versus today. What is the probability we would get a difference of 0.31 - 0.25 = 0.06, or bigger? That's the p-value. 
 
-In our case let's say _p_ = 0.14. What do we make of that?
+In our case let's say _p_ = 0.22. What do we make of that?
 
-Tradition says:
+_Tradition_ says:
 
-- "Fail to Reject the Null" if p > 0.05
+- "Fail to Reject the Null" if p >= 0.05
 - Otherwise "Reject the Null" if p < 0.05.
 
-In this case, we may conclude we don't have enough evidence to confidently say that the proportion of UVA students flossing is any different than it was 10 years ago.
+In this case, we may conclude we don't have enough evidence to determine how the two proportions differ, if at all.
 
 ## Interpret p-values correctly
 
 - A p-value is _not_ the probability that null hypothesis is true.
 - A p-value _does not_ measure the size of an effect or the importance of a result.  
-- A p-value _does not_ allow you to make a binary decision with certainty.
+- A p-value _does not_ allow you to make a binary decision with _certainty_.
 - A p-value is the probability that a statistical summary of the data would be equal to or more extreme than its observed value if the null hypothesis were true.
 
 See [Moving to a World Beyond "p < 0.05"](https://www.tandfonline.com/doi/full/10.1080/00031305.2019.1583913)
@@ -107,37 +107,51 @@ See [Moving to a World Beyond "p < 0.05"](https://www.tandfonline.com/doi/full/1
 
 - Confidence intervals give us an indication of the _magnitude_ and _direction_ of the effect.
 - For our flossing research, we should calculate a confidence interval on the _difference of proportions_.
-- Let's say we calculate a 95% confidence interval on the difference to be 0.05 95% CI [-0.04, 0.14].
-- We're not sure if the proportion is higher or lower than it was 2 years ago. That's the conclusion.
+- Let's say we calculate a 95% confidence interval on the difference to be 0.06 95% CI [-0.03, 0.15].
+- We're not sure if the proportion is higher or lower than it was 2 years ago, but it appears we have some evidence it could be higher.
 
 
 ## The analysis in R
 
-One-sample hypothesis test. Null: proportion who floss is 0.30
+Confidence interval on a single proportion
 
 ```{r}
-prop.test(x = 50, n = 200, p = 0.3)
+prop.test(x = 50, n = 200)$conf.int
 ```
 
 ## The analysis in R
 
-Two-sample hypothesis test. Null: proportion has not changed in two years
+Two-sample hypothesis test. Null: two proportions are no different
 
 ```{r}
-prop.test(x = c(60, 50), n = c(200, 200))
+prop.test(x = c(62, 50), n = c(200, 200))
 ```
 
-## ATOM
+## Onward
 
-The American Statistical Association [recommends](https://www.tandfonline.com/doi/full/10.1080/00031305.2019.1583913) the following when doing statistical inference:
+Today we will review some basic statistical methods by analyzing a sample of the 2012 [American Community Survey](https://www.census.gov/programs-surveys/acs).
 
-- **A**ccept uncertainty
-- Be **t**houghtful
-- Be **o**pen
-- Be **m**odest 
+The emphasis is on implementation and interpretation, not theory or math.
 
-## It's funny because it's true, sadly
+Let's go to R!
 
-![](tweet.jpg)
-<br><br><br>
-Note: RR = "Risk Ratio", another way to compare two proportions. A ratio of 1 implies "no difference".
+## Resources
+
+[OpenIntro Statistics](https://www.openintro.org/book/os/) - free Open Educational Resource (OER) textbook
+
+[The Epidemiologist R Handbook](https://epirhandbook.com/) - R for applied epidemiology and public health
+
+[OnlineStatBook](https://onlinestatbook.com/2/index.html) - free Open Educational Resource (OER) interactive textbook
+
+[Statistics Notes in the British Medical Journal](https://www-users.york.ac.uk/~mb55/pubs/pbstnote.htm) - "small doses of 
+statistics that can be absorbed in a few minutes."
+
+
+## Thanks for coming
+
+* For statistical consulting, contact the UVA Library StatLab: statlab@virginia.edu
+
+* Sign up for more workshops or see past workshops:
+http://data.library.virginia.edu/training/
+
+* Register for the Research Data Services newsletter to be notified of new workshops: http://data.library.virginia.edu/newsletters/

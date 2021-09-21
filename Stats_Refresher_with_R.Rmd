@@ -26,11 +26,6 @@ Add a new R code chunk by clicking the *Insert Chunk* button on the toolbar or b
 
 Insert a new R code chunk below and type/run the code: 22/7
 
-```{r}
-22/7
-```
-
-
 ## Load packages
 
 The magrittr package provides us with a "pipe" function: `%>%`
@@ -80,12 +75,6 @@ table(acs12$employment)
 Summarize the "edu" and "time_to_work" columns.
 
 Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
-
-```{r}
-summary(acs12$time_to_work)
-table(acs12$edu)
-```
-
 
 
 ## Estimating proportions with confidence intervals
@@ -149,8 +138,8 @@ The reported 95% confidence interval is about (0.18, 0.21). We'll talk about the
 Above we manually typed the numbers, which is an opportunity to make a mistake. Here's one way to avoid that. Calculate the number who answered "other" and the number of non-missing responses to the "lang" question.
 
 ```{r}
-other <- sum(acs12$lang == "other", na.rm = TRUE)
-N <- sum(!is.na(acs12$lang))
+other <- table(acs12$lang)["other"]
+N <- sum(table(acs12$lang))
 prop.test(x = other, n = N)
 ```
 
@@ -174,11 +163,6 @@ About 0.09, with 95% CI of (0.07, 0.11).
 Estimate the proportion of the population that earns more than $100,000/year along with a confidence interval.
 
 Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
-
-```{r}
-mosaic::prop.test(acs12$income > 100000)
-```
-
 
 
 ## Estimating means with confidence intervals
@@ -218,15 +202,12 @@ Estimate the mean time_to_work (ie, commute time) with a 95% confidence interval
 
 Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (Mac). 
 
-```{r}
-t.test(acs12$time_to_work)
-```
-
-
 
 ## Comparing two proportions
 
-The following code creates a two-way contingency table with gender in the rows and employment in the columns using `xtabs`. The table is then "piped" into the `proportions` function. The argument `margin=1` says to calculate proportions along the rows. The result says about 6% of females are unemployed and that about 7% of males are unemployed. That's a difference of 1%.
+Is there a difference in the proportion of males unemployed and the proportion of females unemployed?
+
+The following code creates a two-way contingency table with gender in the rows and employment in the columns using `xtabs`. The table is then "piped" into the `proportions` function. The argument `margin = 1` says to calculate proportions along the rows. The result says about 6% of females are unemployed and that about 7% of males are unemployed. That's a difference of 1%.
 
 The `%>%` operator can be entered in RStudio using the following keyboard shortcuts:
 
@@ -264,7 +245,7 @@ prop.test(x = c(47, 59), n = c(793, 812))
 
 The p-value says there's about a 33% chance of getting a difference bigger than than what we observed (about 0.01) if there really is no difference between the proportions.
 
-Traditionally we judge a difference "significant" if the p-value is small, say below 0.05.
+Traditionally we judge a difference "significant" if the p-value is small, say below 0.05. But there is nothing special about 0.05. Avoid drawing a conclusion with certainty based on a p-value crossing an arbitrary threshold.
 
 In this case, we might conclude: 
 
@@ -306,6 +287,8 @@ xtabs(~ disability + edu, data = acs12) %>%
 
 ## Comparing two means
 
+Do married people work more hours on average than non-married people?
+
 The following code computes the mean hours worked per week for married and non-married people. The `aggregate` function uses the formula interface like `xtabs`. On the left of the `~` we enter the numeric variable. On the right we enter the grouping variable. The final argument is the function we wish to use with aggregate. In this case it's the mean. Married people appear to work longer hours, by about 5 hours. 
 
 ```{r}
@@ -322,7 +305,7 @@ t.test(hrs_work ~ married, data = acs12)
 
 The p-value is virtually 0. There is almost no chance of seeing a difference in means bigger than what we observed if there truly was no difference in the population. 
 
-The 95% confidence interval is on the difference of the means. _It is more informative than the p-value_. It provides information on the direction and magnitude of the difference. The p-values does not provide this information. The 95% CI is (-7.1, -3.7). It appears that married people work at least 3.7 hours more per week than non-married people. 
+The 95% confidence interval is on the difference of the means. _It is more informative than the p-value_. It provides information on the _direction and magnitude_ of the difference. The p-values does not provide this information. The 95% CI is (-7.1, -3.7). It appears that non-married people work around 3 - 7 fewer hours per week than married people. 
 
 Note: Be cautious before concluding that being married _causes_ someone to work longer hours. This simple hypothesis test looked at everyone of all ages working full-time and part-time. Perhaps if we compared hours worked between married and non-married people _among full-time workers_ we would see a different result. 
 
@@ -380,7 +363,9 @@ Add a new R code chunk by pressing *Ctrl+Alt+I* (Win/Linux) or *Cmd+Option+I* (M
 
 ## Checking for association between numeric variables
 
-Is the hours worked per week associated with income? Association of two numeric variables is sometimes measured with correlation. Formally, correlation measures _linear_ association and ranges from -1 to 1.
+Are hours worked per week associated with income? 
+
+Association of two numeric variables is sometimes measured with correlation. Formally, correlation measures _linear_ association and ranges from -1 to 1.
 
 This illustration is useful:
 https://en.wikipedia.org/wiki/Correlation_and_dependence#/media/File:Correlation_examples2.svg
@@ -477,7 +462,7 @@ When we run a one-way ANOVA we make some important assumptions, two of which are
 
 A quick way to visually assess these assumptions is to call `plot` on your `aov` object. This produces 4 plots. The 1st and 3rd assess the constant variance assumption. The 2nd assesses the normality assumption. The 4th assesses influential data (data that by itself is influencing the results.)
 
-The two plots of interest to us are the 2nd and 3rd plots. They reveal pretty severe violations of the constant variance and normality assumptions. In the 2nd plot we'd like the points to lie close to the diagonal line. In the 3rd plot, we'd like the smooth red line to be close to horizontal.
+The two plots of interest to us are the 2nd and 3rd plots. _They reveal pretty severe violations_ of the constant variance and normality assumptions. In the 2nd plot we'd like the points to lie close to the diagonal line. In the 3rd plot, we'd like the smooth red line to be close to horizontal.
 
 ```{r}
 plot(aov1)
@@ -574,7 +559,7 @@ abline(m2, col = "blue")
 
 There is some association of age with income, but not a lot. The blue prediction line implies you would expect to earn the most money in your 80s and 90s. 
 
-The association appears to increase in the 20s and 30s but level off after that. This makes sense. We wouldn't expect income to increase indefinitely with age. One very simple way to accommodate this non-linear association is with a polynomial function. For example: income = age + age^2 + age^3. The `poly` function makes this rather easy to do. The second argument is the degree of the polynomial.
+The association appears to increase in the 20s and 30s but level off after that. This makes sense. We wouldn't expect income to increase indefinitely with age. One very simple way to accommodate this _non-linear association_ is with a polynomial function. For example: income = age + age^2 + age^3. The `poly` function makes this rather easy to do. The second argument is the degree of the polynomial.
 
 ```{r}
 m3 <- lm(log(income) ~ poly(age, degree = 3), 
@@ -584,7 +569,7 @@ summary(m3)
 
 The Adjusted R-Squared has more than doubled to about 0.20. Still not great, but better. The diagnostic plots are largely unchanged if not slightly better. 
 
-Let's plot the prediction line. One way to do this is with the `predict` function. Just give it a model object name and the range of data on which to make a prediction using the `newdata` argument. Notice the new data needs to be in a data.frame. Finally we add the predicted line to the plot using the `lines` function.
+The coefficients defy interpretation. However we plot the prediction line to gain a better understanding of our model. One way to do this is with the `predict` function. Just give it a model object name and the range of data on which to make a prediction using the `newdata` argument. Notice the new data needs to be in a data.frame. Finally we add the predicted line to the plot using the `lines` function.
 
 ```{r}
 plot(log(income) ~ age, data = subset(acs12, income > 0))
